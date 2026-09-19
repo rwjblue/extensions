@@ -55,6 +55,10 @@ import {
   sessionsFrom,
 } from "./schedule.ts"
 import { CWTScorer } from "./scorer.ts"
+import { DataFile, fileCache, Settings } from "./data/hooks.ts"
+import { createPrefill } from "./integration/prefill.ts"
+import { callFilterCategory } from '../../../../packages/spot-filters/src/index.ts'
+import { callFilter } from './data/spot-filter.ts'
 
 import manifest from "../manifest.json" with { type: "json" }
 
@@ -252,9 +256,8 @@ const ActivityHook = {
           maxLength: 6,
           uppercase: true,
           pattern: NUMBER_PATTERN,
-          // A HINT, never a suggested value — see `guessedQth`. Most CWT
-          // participants are members sending a number, and pre-filling a state
-          // would stamp the wrong exchange onto the majority of contacts.
+          // The prefill adapter uses this location only after known CWT
+          // exchanges from the current operation, file, and older history.
           placeholder: qth || undefined,
         },
       },
@@ -279,7 +282,8 @@ const ActivityHook = {
     const nameDecided = qsoRef !== undefined && 'name' in qsoRef
     const numberDecided = qsoRef !== undefined && 'number' in qsoRef
     const name = nameDecided ? firstName(qsoRef.name) : guessedName(their)
-    // The number is never guessed — only what the operator typed is recorded.
+    // The control may suggest a known exchange, but only its accepted value
+    // reaches this ref. Never substitute a callsign lookup's guessed location.
     const number = numberDecided ? normalizeNumber(qsoRef.number) : ''
 
     if (!name && !number) {
@@ -490,16 +494,23 @@ const ExportHook = {
   },
 }
 
+const prefill = createPrefill(fileCache, ActivityHook)
+
 defineExtension({
   ...manifest,
   onActivation({ registerHook }) {
-    registerHook('activity', { hook: ActivityHook, key: manifest.key })
+    registerHook('activity', { hook: prefill.activity, key: manifest.key })
     registerHook(`ref:${TYPE}`, { hook: RefHandler, key: manifest.key })
     registerHook('adifFields', { hook: AdifFieldsHook, key: manifest.key })
     registerHook('export', { hook: ExportHook, key: manifest.key })
     registerHook('scoring', {
-      hook: contestScorer(CWTScorer, { scope: { refTypes: [TYPE] } }),
+      hook: prefill.scoring(contestScorer(CWTScorer, { scope: { refTypes: [TYPE] } })),
       key: manifest.key,
     })
+    registerHook('lookup', { hook: prefill.lookup, key: manifest.key })
+    registerHook('dataFile', { hook: DataFile, key: DataFile.key })
+    registerHook('settingsPanel', { hook: Settings, key: manifest.key })
+    registerHook(callFilterCategory, { hook: callFilter, key: manifest.key })
+    void fileCache.load()
   },
 })

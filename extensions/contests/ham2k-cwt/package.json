@@ -20,8 +20,8 @@
     "These are the ones this extension's own tests reach through the SDK."
   ],
   "devDependencies": {
-    "@ham2k/extension-sdk": "^0.6.0",
-    "@ham2k/extension-tools": "^0.6.0",
+    "@ham2k/extension-sdk": "0.6.0",
+    "@ham2k/extension-tools": "0.6.0",
     "esbuild": "^0.25.5"
   },
   "engines": {

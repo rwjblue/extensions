@@ -19,9 +19,13 @@
   "hooks": [
     "activity",
     "adifFields",
+    "dataFile",
     "export",
+    "lookup",
     "ref:cwt",
-    "scoring"
+    "scoring",
+    "settingsPanel",
+    "spotCallFilter:v1"
   ],
   "relevance": {
     "interests": [
@@ -50,5 +54,9 @@
         "telegrafía"
       ]
     }
-  }
+  },
+  "domains": [
+    "n1mm.hamdocs.com",
+    "n1mmwp.hamdocs.com"
+  ]
 }
